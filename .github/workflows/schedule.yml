@@ -19,11 +19,12 @@ jobs:
 
       - name: Install dependencies
         run: |
-          pip install requests
+          pip install requests python-dotenv
 
-      -  name: Run dividend alert bot
-      env:
-        TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
-      run: python main.py
+      - name: Run dividend alert bot
+        env:
+          TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+        run: python main.py
+
 
         
