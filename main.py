@@ -11,7 +11,7 @@ MY_STOCKS = ["MPLX", "SPCX", "CIEN", "CRWV", "SMCI", "FSK", "RWAY", "QFIN", "HTG
 
 def send_telegram(text_message):
     """Helper function to route alerts straight to your phone"""
-    telegram_url = f"https://telegram.org{TELEGRAM_BOT_TOKEN}/sendMessage"
+    telegram_url = f"https://api.telegram.org/bot{TELEGRAM_BOT_TOKEN}/sendMessage"
     payload = {"chat_id": TELEGRAM_CHAT_ID, "text": text_message}
     requests.post(telegram_url, json=payload)
 
