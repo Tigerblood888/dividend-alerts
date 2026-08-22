@@ -1,9 +1,14 @@
+import os
+from dotenv import load_dotenv
+
+# This looks for your hidden .env file
+load_dotenv()
 import requests
 from datetime import datetime, timedelta
 
 # --- CONFIGURATION ---
 FMP_API_KEY = "OefKADASIS81FNIXFvv7KeaC8xjUekRo"
-TELEGRAM_BOT_TOKEN = "8852179205:AAEPiOPnAk2Zg4A2v8B8T5y76t28TZm6JkE"
+TOKEN = os.getenv("TELEGRAM_BOT_TOKEN")
 TELEGRAM_CHAT_ID = "8639836189"
 
 MY_STOCKS = ["MPLX", "SPCX", "CIEN", "CRWV", "SMCI", "FSK", "RWAY", "QFIN", "HTGC", "BXSL", "MU", "NOW", "TSM", "NVDA", "TSLA", "PLTR", "AGNC", "ARCC", "ET", "HRZN", "MELI", "MRVL", "PSEC", "TRIN", "WES"]
