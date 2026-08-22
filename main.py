@@ -2,7 +2,6 @@ import requests
 from datetime import datetime, timedelta
 
 # --- CONFIGURATION ---
-# Your correct credentials are pre-filled here!
 FMP_API_KEY = "OefKADASIS81FNIXFvv7KeaC8xjUekRo"
 TELEGRAM_BOT_TOKEN = "8852179205:AAEPiOPnAk2Zg4A2v8B8T5y76t28TZm6JkE"
 TELEGRAM_CHAT_ID = "8639836189"
@@ -11,7 +10,7 @@ MY_STOCKS = ["MPLX", "SPCX", "CIEN", "CRWV", "SMCI", "FSK", "RWAY", "QFIN", "HTG
 
 def send_telegram(text_message):
     """Helper function to route alerts straight to your phone"""
-    telegram_url = f"https://api.telegram.org/bot{TELEGRAM_BOT_TOKEN}/sendMessage"
+    telegram_url = f"https://telegram.org{TELEGRAM_BOT_TOKEN}/sendMessage"
     payload = {"chat_id": TELEGRAM_CHAT_ID, "text": text_message}
     requests.post(telegram_url, json=payload)
 
@@ -49,7 +48,7 @@ def check_dividend_changes():
                 hist_res = requests.get(f"https://financialmodelingprep.com{ticker}?apikey={FMP_API_KEY}").json()
                 historical_list = hist_res.get("historical", [])
                 if len(historical_list) > 1:
-                    prior_payout = historical_list.get("dividend", current_payout) if isinstance(historical_list, list) else current_payout
+                    prior_payout = historical_list[1].get("dividend", current_payout) if isinstance(historical_list, list) else current_payout
                     if current_payout > prior_payout:
                         send_telegram(f"📈 Dividend Increase Declared!\n• {ticker} raised payout to ${current_payout} (was ${prior_payout})")
                     elif current_payout < prior_payout:
@@ -103,7 +102,7 @@ def check_technical_rsi():
             url = f"https://financialmodelingprep.com{ticker}?type=rsi&period=14&apikey={FMP_API_KEY}"
             response = requests.get(url).json()
             if isinstance(response, list) and len(response) > 0:
-                current_rsi = response.get("rsi", 50) if isinstance(response, list) else 50
+                current_rsi = response[0].get("rsi", 50) if isinstance(response, list) else 50
                 if current_rsi <= 30:
                     send_telegram(f"⚡ Technical Oversold Alert:\n• {ticker} RSI has dropped to {round(current_rsi, 1)} (Deep Value Buying Territory)!")
     except Exception as e: print(f"RSI error: {e}")
@@ -141,8 +140,6 @@ def check_earnings_surprises():
     except Exception as e: print(f"Earnings surprise error: {e}")
 
 if __name__ == "__main__":
-    # Force an immediate manual test message to prove Telegram connection
-    send_telegram("🚀 Hard Reset Success! Your custom terminal can officially message your phone device.")
     check_dividends()
     check_earnings()
     check_dividend_changes()
