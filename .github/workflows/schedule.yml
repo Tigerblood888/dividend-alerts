@@ -23,7 +23,8 @@ jobs:
 
       - name: Install dependencies
         run: |
-          pip install requests
+          pip install requests python-dotenv
+
 
       - name: Execute dividend script
         run: python main.py
