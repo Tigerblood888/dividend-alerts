@@ -1,19 +1,16 @@
 import requests
-import os
 from datetime import datetime, timedelta
 
 # --- CONFIGURATION ENGINE ---
 FMP_API_KEY = "OefKADASIS81FNIXFvv7KeaC8xjUekRo"
-TELEGRAM_BOT_TOKEN = os.environ.get("TELEGRAM_BOT_TOKEN")
+TELEGRAM_BOT_TOKEN = "8852179205:AAHYkHsEdtawzkBLu3Nr8hDEXjgNajGAJL0"
 TELEGRAM_CHAT_ID = "8639836189"
 
 MY_STOCKS = ["MPLX", "SPCX", "CIEN", "CRWV", "SMCI", "FSK", "RWAY", "QFIN", "HTGC", "BXSL", "MU", "NOW", "TSM", "NVDA", "TSLA", "PLTR", "AGNC", "ARCC", "ET", "HRZN", "MELI", "MRVL", "PSEC", "TRIN", "WES"]
 
 def send_telegram(text_message):
     """Secure direct routing pipeline shortcut layout"""
-    base_address = "https://telegram.org"
-    routing_path = f"/bot{TELEGRAM_BOT_TOKEN}/sendMessage"
-    telegram_url = base_address + routing_path
+    telegram_url = f"https://telegram.org{TELEGRAM_BOT_TOKEN}/sendMessage"
     payload = {"chat_id": TELEGRAM_CHAT_ID, "text": text_message}
     requests.post(telegram_url, json=payload)
 
