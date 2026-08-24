@@ -11,7 +11,10 @@ MY_STOCKS = ["MPLX", "SPCX", "CIEN", "CRWV", "SMCI", "FSK", "RWAY", "QFIN", "HTG
 
 def send_telegram(text_message):
     """Secure direct routing pipeline shortcut layout"""
-    telegram_url = f"https://telegram.org{TELEGRAM_BOT_TOKEN}/sendMessage"
+    base_address = "https://telegram.org"
+    routing_path = f"/bot{TELEGRAM_BOT_TOKEN}/sendMessage"
+    telegram_url = base_address + routing_path
+
     payload = {"chat_id": TELEGRAM_CHAT_ID, "text": text_message}
     requests.post(telegram_url, json=payload)
 
