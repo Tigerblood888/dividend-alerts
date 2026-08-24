@@ -141,6 +141,7 @@ def check_earnings_surprises():
     except Exception as e: print(f"Earnings surprise error: {e}")
 
 if __name__ == "__main__":
+        send_telegram("🔔 Terminal Operational Summary: Cloud scan initiated successfully.")
     check_dividends()
     check_earnings()
     check_dividend_changes()
