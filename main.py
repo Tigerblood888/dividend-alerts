@@ -48,7 +48,7 @@ def check_dividend_changes():
                 hist_res = requests.get(f"https://financialmodelingprep.com{ticker}?apikey={FMP_API_KEY}").json()
                 historical_list = hist_res.get("historical", [])
                 if len(historical_list) > 1 and isinstance(historical_list, list):
-                    prior_payout = historical_list[1].get("dividend", current_payout)
+                    prior_payout = historical_list.get("dividend", current_payout)
                     if current_payout > prior_payout:
                         send_telegram(f"📈 Dividend Increase Declared!\n• {ticker} raised payout to ${current_payout} (was ${prior_payout})")
                     elif current_payout < prior_payout:
@@ -102,7 +102,7 @@ def check_technical_rsi():
             url = f"https://financialmodelingprep.com{ticker}?type=rsi&period=14&apikey={FMP_API_KEY}"
             response = requests.get(url).json()
             if isinstance(response, list) and len(response) > 0:
-                current_rsi = response[0].get("rsi", 50)
+                current_rsi = response.get("rsi", 50)
                 if current_rsi <= 30:
                     send_telegram(f"⚡ Technical Oversold Alert:\n• {ticker} RSI has dropped to {round(current_rsi, 1)} (Deep Value Buying Territory)!")
     except Exception as e: print(f"RSI error: {e}")
@@ -117,8 +117,7 @@ def check_heavy_price_swings():
             ticker = stock.get("symbol")
             change_percent = stock.get("changesPercentage", 0.0)
             current_price = stock.get("price", 0.0)
-            # Temporarily set to 0.1% to guarantee your phone text pipes fire instantly!
-            if abs(change_percent) >= 0.1:
+            if abs(change_percent) >= 5.0:
                 direction = "📈 Massive Gain" if change_percent > 0 else "📉 Heavy Drop"
                 send_telegram(f"{direction} Alert:\n• {ticker} moved {round(change_percent, 2)}% today! Current Price: ${current_price}")
     except Exception as e: print(f"Price swing error: {e}")
@@ -141,7 +140,7 @@ def check_earnings_surprises():
     except Exception as e: print(f"Earnings surprise error: {e}")
 
 if __name__ == "__main__":
-        send_telegram("🔔 Terminal Operational Summary: Cloud scan initiated successfully.")
+    send_telegram("🔔 Terminal Operational Summary: Cloud scan initiated successfully.")
     check_dividends()
     check_earnings()
     check_dividend_changes()
