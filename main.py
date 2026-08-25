@@ -1,22 +1,21 @@
 import requests
-import os
 from datetime import datetime, timedelta
 
 # --- CONFIGURATION ENGINE ---
 FMP_API_KEY = "OefKADASIS81FNIXFvv7KeaC8xjUekRo"
-TELEGRAM_BOT_TOKEN = "8852179205:AAHYkHsEdtawzkBLu3Nr8hDEXjgNajGAJL0"
+TELEGRAM_BOT_TOKEN = "8852179205:AAEPiOPnAk2Zg4A2v8B8T5y76t28TZm6JkE"
 TELEGRAM_CHAT_ID = "8639836189"
 
 MY_STOCKS = ["MPLX", "SPCX", "CIEN", "CRWV", "SMCI", "FSK", "RWAY", "QFIN", "HTGC", "BXSL", "MU", "NOW", "TSM", "NVDA", "TSLA", "PLTR", "AGNC", "ARCC", "ET", "HRZN", "MELI", "MRVL", "PSEC", "TRIN", "WES"]
 
 def send_telegram(text_message):
-    """Helper function to route alert summaries straight to your Telegram device layout"""
+    """Helper function to route alerts straight to your phone"""
     telegram_url = f"https://telegram.org{TELEGRAM_BOT_TOKEN}/sendMessage"
     payload = {"chat_id": TELEGRAM_CHAT_ID, "text": text_message}
     try:
         requests.post(telegram_url, json=payload)
     except Exception as e:
-        print(f"Telegram transmission error: {e}")
+        print(f"Telegram error: {e}")
 
 def check_dividends():
     target_date = (datetime.now() + timedelta(days=14)).strftime("%Y-%m-%d")
@@ -52,7 +51,7 @@ def check_dividend_changes():
                 hist_res = requests.get(f"https://financialmodelingprep.com{ticker}?apikey={FMP_API_KEY}").json()
                 historical_list = hist_res.get("historical", [])
                 if len(historical_list) > 1 and isinstance(historical_list, list):
-                    prior_payout = historical_list.get("dividend", current_payout)
+                    prior_payout = historical_list[0].get("dividend", current_payout)
                     if current_payout > prior_payout:
                         send_telegram(f"📈 Dividend Increase Declared!\n• {ticker} raised payout to ${current_payout} (was ${prior_payout})")
                     elif current_payout < prior_payout:
@@ -106,7 +105,7 @@ def check_technical_rsi():
             url = f"https://financialmodelingprep.com{ticker}?type=rsi&period=14&apikey={FMP_API_KEY}"
             response = requests.get(url).json()
             if isinstance(response, list) and len(response) > 0:
-                current_rsi = response.get("rsi", 50)
+                current_rsi = response[0].get("rsi", 50)
                 if current_rsi <= 30:
                     send_telegram(f"⚡ Technical Oversold Alert:\n• {ticker} RSI has dropped to {round(current_rsi, 1)} (Deep Value Buying Territory)!")
     except Exception as e: print(f"RSI error: {e}")
