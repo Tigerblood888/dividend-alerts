@@ -1,3 +1,4 @@
+
 import requests
 from datetime import datetime, timedelta
 
@@ -10,12 +11,14 @@ MY_STOCKS = ["MPLX", "SPCX", "CIEN", "CRWV", "SMCI", "FSK", "RWAY", "QFIN", "HTG
 
 def send_telegram(text_message):
     """Helper function to route alerts straight to your phone"""
-    telegram_url = f"https://telegram.org{TELEGRAM_BOT_TOKEN}/sendMessage"
+    base_address = "https://telegram.org"
+    routing_path = f"/bot{TELEGRAM_BOT_TOKEN}/sendMessage"
+    telegram_url = base_address + routing_path
     payload = {"chat_id": TELEGRAM_CHAT_ID, "text": text_message}
     try:
         requests.post(telegram_url, json=payload)
     except Exception as e:
-        print(f"Telegram error: {e}")
+        print(f"Telegram transmission error: {e}")
 
 def check_dividends():
     target_date = (datetime.now() + timedelta(days=14)).strftime("%Y-%m-%d")
@@ -51,7 +54,7 @@ def check_dividend_changes():
                 hist_res = requests.get(f"https://financialmodelingprep.com{ticker}?apikey={FMP_API_KEY}").json()
                 historical_list = hist_res.get("historical", [])
                 if len(historical_list) > 1 and isinstance(historical_list, list):
-                    prior_payout = historical_list[0].get("dividend", current_payout)
+                    prior_payout = historical_list.get("dividend", current_payout)
                     if current_payout > prior_payout:
                         send_telegram(f"📈 Dividend Increase Declared!\n• {ticker} raised payout to ${current_payout} (was ${prior_payout})")
                     elif current_payout < prior_payout:
