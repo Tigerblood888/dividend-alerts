@@ -1,30 +1,31 @@
-
 import requests
 from datetime import datetime, timedelta
 
 # --- CONFIGURATION ENGINE ---
-FMP_API_KEY = "OefKADASIS81FNIXFvv7KeaC8xjUekRo"
-TELEGRAM_BOT_TOKEN = "8852179205:AAEPiOPnAk2Zg4A2v8B8T5y76t28TZm6JkE"
+FMP_API_KEY = "PASTE_YOUR_NEW_ROTATED_FMP_KEY_HERE"
+TELEGRAM_BOT_TOKEN = "8852179205:AAEma6fcIyzdncTytKjYbBpMscuGOpGhqy4"
 TELEGRAM_CHAT_ID = "8639836189"
 
 MY_STOCKS = ["MPLX", "SPCX", "CIEN", "CRWV", "SMCI", "FSK", "RWAY", "QFIN", "HTGC", "BXSL", "MU", "NOW", "TSM", "NVDA", "TSLA", "PLTR", "AGNC", "ARCC", "ET", "HRZN", "MELI", "MRVL", "PSEC", "TRIN", "WES"]
 
 def send_telegram(text_message):
     """Helper function to route alerts straight to your phone"""
-    base_address = "https://telegram.org"
+    base_address = "https://api.telegram.org"   # FIX: was "https://telegram.org"
     routing_path = f"/bot{TELEGRAM_BOT_TOKEN}/sendMessage"
     telegram_url = base_address + routing_path
     payload = {"chat_id": TELEGRAM_CHAT_ID, "text": text_message}
     try:
-        requests.post(telegram_url, json=payload)
+        resp = requests.post(telegram_url, json=payload, timeout=15)
+        if resp.status_code != 200:
+            print(f"Telegram rejected the message: {resp.status_code} {resp.text}")
     except Exception as e:
         print(f"Telegram transmission error: {e}")
 
 def check_dividends():
     target_date = (datetime.now() + timedelta(days=14)).strftime("%Y-%m-%d")
-    url = f"https://financialmodelingprep.com{target_date}&to={target_date}&apikey={FMP_API_KEY}"
+    url = f"https://financialmodelingprep.com/stable/dividends-calendar?from={target_date}&to={target_date}&apikey={FMP_API_KEY}"
     try:
-        response = requests.get(url).json()
+        response = requests.get(url, timeout=15).json()
         if isinstance(response, dict): return
         alerts = [f"• {e.get('symbol')}: Ex-date {target_date} (Amt: ${e.get('dividend', 0)})" for e in response if e.get("symbol") in MY_STOCKS]
         if alerts: send_telegram("💰 14-Day Dividend Warning:\n" + "\n".join(alerts))
@@ -32,9 +33,9 @@ def check_dividends():
 
 def check_earnings():
     target_date = (datetime.now() + timedelta(days=7)).strftime("%Y-%m-%d")
-    url = f"https://financialmodelingprep.com{target_date}&to={target_date}&apikey={FMP_API_KEY}"
+    url = f"https://financialmodelingprep.com/stable/earnings-calendar?from={target_date}&to={target_date}&apikey={FMP_API_KEY}"
     try:
-        response = requests.get(url).json()
+        response = requests.get(url, timeout=15).json()
         if isinstance(response, dict): return
         alerts = [f"• {e.get('symbol')} reports on {target_date} ({e.get('time', 'unspecified')})" for e in response if e.get("symbol") in MY_STOCKS]
         if alerts: send_telegram("📊 7-Day Earnings Warning:\n" + "\n".join(alerts))
@@ -43,18 +44,18 @@ def check_earnings():
 def check_dividend_changes():
     start_date = (datetime.now() - timedelta(days=1)).strftime("%Y-%m-%d")
     end_date = datetime.now().strftime("%Y-%m-%d")
-    url = f"https://financialmodelingprep.com{start_date}&to={end_date}&apikey={FMP_API_KEY}"
+    url = f"https://financialmodelingprep.com/stable/dividends-calendar?from={start_date}&to={end_date}&apikey={FMP_API_KEY}"
     try:
-        response = requests.get(url).json()
+        response = requests.get(url, timeout=15).json()
         if isinstance(response, dict): return
         for event in response:
             ticker = event.get("symbol")
             if ticker in MY_STOCKS:
                 current_payout = event.get("dividend", 0)
-                hist_res = requests.get(f"https://financialmodelingprep.com{ticker}?apikey={FMP_API_KEY}").json()
-                historical_list = hist_res.get("historical", [])
-                if len(historical_list) > 1 and isinstance(historical_list, list):
-                    prior_payout = historical_list.get("dividend", current_payout)
+                hist_url = f"https://financialmodelingprep.com/stable/dividends?symbol={ticker}&apikey={FMP_API_KEY}"
+                historical_list = requests.get(hist_url, timeout=15).json()
+                if isinstance(historical_list, list) and len(historical_list) > 1:
+                    prior_payout = historical_list[1].get("dividend", current_payout)  # FIX: index into list, not .get on the list itself
                     if current_payout > prior_payout:
                         send_telegram(f"📈 Dividend Increase Declared!\n• {ticker} raised payout to ${current_payout} (was ${prior_payout})")
                     elif current_payout < prior_payout:
@@ -62,9 +63,9 @@ def check_dividend_changes():
     except Exception as e: print(f"Div change error: {e}")
 
 def check_analyst_upgrades():
-    url = f"https://financialmodelingprep.com{FMP_API_KEY}"
+    url = f"https://financialmodelingprep.com/stable/grade-latest-news?apikey={FMP_API_KEY}"
     try:
-        response = requests.get(url).json()
+        response = requests.get(url, timeout=15).json()
         if isinstance(response, dict): return
         for e in response:
             ticker = e.get("symbol")
@@ -75,9 +76,10 @@ def check_analyst_upgrades():
     except Exception as e: print(f"Analyst error: {e}")
 
 def check_insider_buying():
-    url = f"https://financialmodelingprep.com{FMP_API_KEY}"
+    # NOTE: verify this endpoint path in FMP's dashboard/playground for your plan tier before relying on it
+    url = f"https://financialmodelingprep.com/stable/insider-trading/latest?apikey={FMP_API_KEY}"
     try:
-        response = requests.get(url).json()
+        response = requests.get(url, timeout=15).json()
         if isinstance(response, dict): return
         for trade in response:
             ticker = trade.get("symbol")
@@ -89,14 +91,15 @@ def check_insider_buying():
     except Exception as e: print(f"Insider error: {e}")
 
 def check_unusual_volume():
-    url = f"https://financialmodelingprep.com{FMP_API_KEY}"
+    tickers_string = ",".join(MY_STOCKS)
+    url = f"https://financialmodelingprep.com/stable/quote?symbol={tickers_string}&apikey={FMP_API_KEY}"
     try:
-        response = requests.get(url).json()
+        response = requests.get(url, timeout=15).json()
         if isinstance(response, dict): return
         for item in response:
             ticker = item.get("symbol")
             if ticker in MY_STOCKS:
-                volume, avg_volume = item.get("volume", 0), item.get("avgVolume", 1)
+                volume, avg_volume = item.get("volume", 0), item.get("avgVolume", 1) or 1
                 ratio = round(volume / avg_volume, 1)
                 if ratio >= 2.0:
                     send_telegram(f"📊 Unusual Volume Spike:\n• {ticker} is trading at {ratio}x its normal average daily volume right now!")
@@ -105,8 +108,8 @@ def check_unusual_volume():
 def check_technical_rsi():
     try:
         for ticker in MY_STOCKS:
-            url = f"https://financialmodelingprep.com{ticker}?type=rsi&period=14&apikey={FMP_API_KEY}"
-            response = requests.get(url).json()
+            url = f"https://financialmodelingprep.com/stable/technical-indicators/rsi?symbol={ticker}&periodLength=14&timeframe=1day&apikey={FMP_API_KEY}"
+            response = requests.get(url, timeout=15).json()
             if isinstance(response, list) and len(response) > 0:
                 current_rsi = response[0].get("rsi", 50)
                 if current_rsi <= 30:
@@ -115,9 +118,9 @@ def check_technical_rsi():
 
 def check_heavy_price_swings():
     tickers_string = ",".join(MY_STOCKS)
-    url = f"https://financialmodelingprep.com{tickers_string}?apikey={FMP_API_KEY}"
+    url = f"https://financialmodelingprep.com/stable/quote?symbol={tickers_string}&apikey={FMP_API_KEY}"
     try:
-        response = requests.get(url).json()
+        response = requests.get(url, timeout=15).json()
         if isinstance(response, dict): return
         for stock in response:
             ticker = stock.get("symbol")
@@ -129,15 +132,17 @@ def check_heavy_price_swings():
     except Exception as e: print(f"Price swing error: {e}")
 
 def check_earnings_surprises():
-    url = f"https://financialmodelingprep.com{FMP_API_KEY}"
+    target_date_from = (datetime.now() - timedelta(days=1)).strftime("%Y-%m-%d")
+    target_date_to = datetime.now().strftime("%Y-%m-%d")
+    url = f"https://financialmodelingprep.com/stable/earnings-calendar?from={target_date_from}&to={target_date_to}&apikey={FMP_API_KEY}"
     try:
-        response = requests.get(url).json()
+        response = requests.get(url, timeout=15).json()
         if isinstance(response, dict): return
         for report in response:
             ticker = report.get("symbol")
             if ticker in MY_STOCKS:
-                actual_eps = report.get("actualEps", 0.0)
-                estimated_eps = report.get("estimatedEps", 0.0)
+                actual_eps = report.get("epsActual", 0.0) or 0.0
+                estimated_eps = report.get("epsEstimated", 0.0) or 0.0
                 if estimated_eps != 0:
                     surprise_pct = ((actual_eps - estimated_eps) / abs(estimated_eps)) * 100
                     if abs(surprise_pct) >= 10.0:
