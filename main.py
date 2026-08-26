@@ -2,7 +2,7 @@ import requests
 from datetime import datetime, timedelta
 
 # --- CONFIGURATION ENGINE ---
-FMP_API_KEY = "PASTE_YOUR_NEW_ROTATED_FMP_KEY_HERE"
+FMP_API_KEY = "1c7p171NR9IJZG3aDfXIOUlVAbyzxVzk"
 TELEGRAM_BOT_TOKEN = "8852179205:AAEma6fcIyzdncTytKjYbBpMscuGOpGhqy4"
 TELEGRAM_CHAT_ID = "8639836189"
 
