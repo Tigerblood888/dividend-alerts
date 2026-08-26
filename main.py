@@ -2,9 +2,11 @@ import requests
 from datetime import datetime, timedelta
 
 # --- CONFIGURATION ENGINE ---
-FMP_API_KEY = "1c7p171NR9IJZG3aDfXIOUlVAbyzxVzk"
-TELEGRAM_BOT_TOKEN = "8852179205:AAEma6fcIyzdncTytKjYbBpMscuGOpGhqy4"
-TELEGRAM_CHAT_ID = "8639836189"
+import os
+
+FMP_API_KEY = os.environ["FMP_API_KEY"]
+TELEGRAM_BOT_TOKEN = os.environ["TELEGRAM_BOT_TOKEN"]
+TELEGRAM_CHAT_ID = os.environ["TELEGRAM_CHAT_ID"]
 
 MY_STOCKS = ["MPLX", "SPCX", "CIEN", "CRWV", "SMCI", "FSK", "RWAY", "QFIN", "HTGC", "BXSL", "MU", "NOW", "TSM", "NVDA", "TSLA", "PLTR", "AGNC", "ARCC", "ET", "HRZN", "MELI", "MRVL", "PSEC", "TRIN", "WES"]
 
