@@ -2,12 +2,21 @@ name: Daily Dividend Check
 
 on:
   schedule:
-    - cron: '30 12 * * 1-5'  # 8:30 AM Eastern Time (Pre-Market Catalysts & Upgrades)
-    - cron: '30 14 * * 1-5'  # 10:30 AM Eastern Time (Opening Bell Volatility)
-    - cron: '0 17 * * 1-5'   # 1:00 PM Eastern Time (Midday Whale Tracker)
-    - cron: '0 19 * * 1-5'   # 3:00 PM Eastern Time (Power Hour Check)
-    - cron: '30 20 * * 1-5'  # 4:30 PM Eastern Time (Closing Settlement & Surprises)
+    - cron: '00 12 * * 1-5'  # 08:00 AM EDT
+    - cron: '15 13 * * 1-5'  # 09:15 AM EDT
+    - cron: '45 13 * * 1-5'  # 09:45 AM EDT
+    - cron: '30 14 * * 1-5'  # 10:30 AM EDT
+    - cron: '45 15 * * 1-5'  # 11:45 AM EDT
+    - cron: '00 17 * * 1-5'  # 01:00 PM EDT
+    - cron: '15 18 * * 1-5'  # 02:15 PM EDT
+    - cron: '30 19 * * 1-5'  # 03:30 PM EDT
+    - cron: '00 20 * * 1-5'  # 04:00 PM EDT
+    - cron: '30 20 * * 1-5'  # 04:30 PM EDT
+    - cron: '30 21 * * 1-5'  # 05:30 PM EDT
+    - cron: '00 23 * * 1-5'  # 07:00 PM EDT
+    - cron: '00 01 * * 2-6'  # 09:00 PM EDT (Tuesday-Saturday UTC)
   workflow_dispatch:
+
 
 jobs:
   run-script:
