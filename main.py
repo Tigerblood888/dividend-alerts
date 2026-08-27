@@ -143,15 +143,15 @@ def check_earnings_surprises():
         for report in response:
             ticker = report.get("symbol")
             if ticker in MY_STOCKS:
-                actual_eps = report.get("epsActual", 0.0) or 0.0
-                estimated_eps = report.get("epsEstimated", 0.0) or 0.0
-                if estimated_eps != 0:
+                actual_eps = report.get("epsActual")
+                estimated_eps = report.get("epsEstimated")
+                if actual_eps is not None and estimated_eps not in (None, 0):
                     surprise_pct = ((actual_eps - estimated_eps) / abs(estimated_eps)) * 100
                     if abs(surprise_pct) >= 10.0:
                         status = "🔥 Positive Surprise (BEAT)" if surprise_pct > 0 else "❄️ Negative Surprise (MISS)"
                         send_telegram(f"🎯 {status} Alert:\n• {ticker} just reported earnings!\n• Actual EPS: {actual_eps} vs Estimated: {estimated_eps} ({round(surprise_pct, 1)}% Surprise)")
     except Exception as e: print(f"Earnings surprise error: {e}")
-
+        
 if __name__ == "__main__":
     send_telegram("🔔 Terminal Operational Summary: Cloud scan initiated successfully.")
     check_dividends()
