@@ -10,7 +10,7 @@ TELEGRAM_CHAT_ID = os.environ.get("TELEGRAM_CHAT_ID")
 MY_STOCKS = ["MPLX", "SPCX", "CIEN", "CRWV", "SMCI", "FSK", "RWAY", "QFIN", "HTGC", "BXSL", "MU", "NOW", "TSM", "NVDA", "TSLA", "PLTR", "AGNC", "ARCC", "ET", "HRZN", "MELI", "MRVL", "PSEC", "TRIN", "WES"]
 
 def send_telegram(text_message):
-    """Helper function to route alert summaries straight to your Telegram device layout"""
+    """Secure direct routing pipeline shortcut layout"""
     if not TELEGRAM_BOT_TOKEN or not TELEGRAM_CHAT_ID:
         print("Telegram keys missing from vault settings.")
         return
@@ -119,7 +119,7 @@ def check_technical_rsi():
             response = requests.get(url).json()
             if response is None or isinstance(response, dict): continue
             if isinstance(response, list) and len(response) > 0:
-                current_rsi = response[0].get("rsi", 50)
+                current_rsi = response.get("rsi", 50)
                 if current_rsi <= 30:
                     send_telegram(f"⚡ Technical Oversold Alert:\n• {ticker} RSI has dropped to {round(current_rsi, 1)} (Deep Value Buying Territory)!")
     except Exception as e: print(f"RSI error: {e}")
