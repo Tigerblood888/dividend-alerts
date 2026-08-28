@@ -2,16 +2,18 @@ import requests
 import os
 from datetime import datetime, timedelta
 
-# --- CONFIGURATION ENGINE ---
+# --- CONFIGURATION ENGINE (SECURE VAULT SHORTCUTS) ---
 FMP_API_KEY = os.environ.get("FMP_API_KEY")
 TELEGRAM_BOT_TOKEN = os.environ.get("TELEGRAM_BOT_TOKEN")
 TELEGRAM_CHAT_ID = os.environ.get("TELEGRAM_CHAT_ID")
-
 
 MY_STOCKS = ["MPLX", "SPCX", "CIEN", "CRWV", "SMCI", "FSK", "RWAY", "QFIN", "HTGC", "BXSL", "MU", "NOW", "TSM", "NVDA", "TSLA", "PLTR", "AGNC", "ARCC", "ET", "HRZN", "MELI", "MRVL", "PSEC", "TRIN", "WES"]
 
 def send_telegram(text_message):
     """Secure direct routing pipeline shortcut layout"""
+    if not TELEGRAM_BOT_TOKEN or not TELEGRAM_CHAT_ID:
+        print("Telegram keys missing from vault settings.")
+        return
     base_address = "https://telegram.org"
     routing_path = f"/bot{TELEGRAM_BOT_TOKEN}/sendMessage"
     telegram_url = base_address + routing_path
@@ -22,6 +24,7 @@ def send_telegram(text_message):
         print(f"Telegram transmission error: {e}")
 
 def check_dividends():
+    if not FMP_API_KEY: return
     target_date = (datetime.now() + timedelta(days=14)).strftime("%Y-%m-%d")
     url = f"https://financialmodelingprep.com{target_date}&to={target_date}&apikey={FMP_API_KEY}"
     try:
@@ -32,6 +35,7 @@ def check_dividends():
     except Exception as e: print(f"Div error: {e}")
 
 def check_earnings():
+    if not FMP_API_KEY: return
     target_date = (datetime.now() + timedelta(days=7)).strftime("%Y-%m-%d")
     url = f"https://financialmodelingprep.com{target_date}&to={target_date}&apikey={FMP_API_KEY}"
     try:
@@ -42,6 +46,7 @@ def check_earnings():
     except Exception as e: print(f"Earnings error: {e}")
 
 def check_dividend_changes():
+    if not FMP_API_KEY: return
     start_date = (datetime.now() - timedelta(days=1)).strftime("%Y-%m-%d")
     end_date = datetime.now().strftime("%Y-%m-%d")
     url = f"https://financialmodelingprep.com{start_date}&to={end_date}&apikey={FMP_API_KEY}"
@@ -65,6 +70,7 @@ def check_dividend_changes():
     except Exception as e: print(f"Div change error: {e}")
 
 def check_analyst_upgrades():
+    if not FMP_API_KEY: return
     url = f"https://financialmodelingprep.com{FMP_API_KEY}"
     try:
         response = requests.get(url).json()
@@ -78,6 +84,7 @@ def check_analyst_upgrades():
     except Exception as e: print(f"Analyst error: {e}")
 
 def check_insider_buying():
+    if not FMP_API_KEY: return
     url = f"https://financialmodelingprep.com{FMP_API_KEY}"
     try:
         response = requests.get(url).json()
@@ -92,6 +99,7 @@ def check_insider_buying():
     except Exception as e: print(f"Insider error: {e}")
 
 def check_unusual_volume():
+    if not FMP_API_KEY: return
     url = f"https://financialmodelingprep.com{FMP_API_KEY}"
     try:
         response = requests.get(url).json()
@@ -106,18 +114,20 @@ def check_unusual_volume():
     except Exception as e: print(f"Volume error: {e}")
 
 def check_technical_rsi():
+    if not FMP_API_KEY: return
     try:
         for ticker in MY_STOCKS:
             url = f"https://financialmodelingprep.com{ticker}?type=rsi&period=14&apikey={FMP_API_KEY}"
             response = requests.get(url).json()
             if response is None or isinstance(response, dict): continue
             if isinstance(response, list) and len(response) > 0:
-                current_rsi = response[0].get("rsi", 50)
+                current_rsi = response.get("rsi", 50)
                 if current_rsi <= 30:
                     send_telegram(f"⚡ Technical Oversold Alert:\n• {ticker} RSI has dropped to {round(current_rsi, 1)} (Deep Value Buying Territory)!")
     except Exception as e: print(f"RSI error: {e}")
 
 def check_heavy_price_swings():
+    if not FMP_API_KEY: return
     tickers_string = ",".join(MY_STOCKS)
     url = f"https://financialmodelingprep.com{tickers_string}?apikey={FMP_API_KEY}"
     try:
@@ -133,6 +143,7 @@ def check_heavy_price_swings():
     except Exception as e: print(f"Price swing error: {e}")
 
 def check_earnings_surprises():
+    if not FMP_API_KEY: return
     url = f"https://financialmodelingprep.com{FMP_API_KEY}"
     try:
         response = requests.get(url).json()
