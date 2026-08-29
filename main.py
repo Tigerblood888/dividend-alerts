@@ -1,5 +1,6 @@
 import requests
 import os
+import sys
 import time
 from datetime import datetime, timedelta
 
@@ -232,16 +233,27 @@ def check_short_interest():
 #     except Exception as e: print(f"Price target error: {e}")
 
 if __name__ == "__main__":
+    # "light" mode = cheap checks only (1 API call each, safe to run several times a day)
+    # "full" mode = light checks PLUS the heavy per-stock checks (25 calls each) —
+    # only meant to run once a day, after market close, when volume/price numbers are final.
+    mode = sys.argv[1] if len(sys.argv) > 1 else "light"
+
     send_telegram("🔔 Terminal Operational Summary: Cloud scan initiated successfully.")
+
+    # Light checks — run every time, any mode
     check_dividends()
     check_earnings()
     check_dividend_changes()
     check_analyst_upgrades()
     check_insider_buying()
-    check_unusual_volume()
-    # check_technical_rsi()  # disabled — see note above
-    check_heavy_price_swings()
     check_earnings_surprises()
-    check_short_interest()
-    # check_price_targets()  # disabled — see note above
+
+    if mode == "full":
+        # Heavy checks — once a day only, after market close, when the day's numbers are final
+        check_unusual_volume()
+        # check_technical_rsi()  # disabled — see note above
+        check_heavy_price_swings()
+        check_short_interest()
+        # check_price_targets()  # disabled — see note above
+
     send_telegram("🚀 Victory Check: The script ran all functions completely!")
