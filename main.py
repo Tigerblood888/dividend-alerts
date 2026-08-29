@@ -114,7 +114,11 @@ def check_unusual_volume():
             if not resp.text.strip():
                 print(f"Volume error: {ticker} returned an empty response (status {resp.status_code})")
                 continue
-            response = resp.json()
+            try:
+                response = resp.json()
+            except Exception as parse_err:
+                print(f"Volume error: {ticker} gave unparseable response (status {resp.status_code}): {resp.text[:200]!r}")
+                continue
             if not isinstance(response, list) or len(response) == 0: continue
             item = response[0]
             volume, avg_volume = item.get("volume", 0), item.get("avgVolume", 1) or 1
@@ -153,7 +157,11 @@ def check_heavy_price_swings():
             if not resp.text.strip():
                 print(f"Price swing error: {ticker} returned an empty response (status {resp.status_code})")
                 continue
-            response = resp.json()
+            try:
+                response = resp.json()
+            except Exception as parse_err:
+                print(f"Price swing error: {ticker} gave unparseable response (status {resp.status_code}): {resp.text[:200]!r}")
+                continue
             if not isinstance(response, list) or len(response) == 0: continue
             stock = response[0]
             change_percent = stock.get("changePercentage", 0.0)
