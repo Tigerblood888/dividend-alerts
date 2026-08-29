@@ -121,10 +121,13 @@ def check_unusual_volume():
                 continue
             if not isinstance(response, list) or len(response) == 0: continue
             item = response[0]
-            volume, avg_volume = item.get("volume", 0), item.get("avgVolume", 1) or 1
+            volume = item.get("volume", 0)
+            avg_volume = item.get("avgVolume") or item.get("averageVolume")
+            if not volume or not avg_volume:
+                continue
             ratio = round(volume / avg_volume, 1)
             if ratio >= 2.0:
-                send_telegram(f"📊 Unusual Volume Spike:\n• {ticker} is trading at {ratio}x its normal average daily volume right now!")
+                send_telegram(f"📊 Unusual Volume Spike:\n• {ticker} has traded {volume:,} shares today — that's {ratio}x its normal daily average ({avg_volume:,.0f} shares). This usually means something is causing unusually heavy buying or selling interest in this stock right now.")
         except Exception as e:
             print(f"Volume error for {ticker}: {e}")
 
