@@ -1,5 +1,6 @@
 import requests
 import os
+import time
 from datetime import datetime, timedelta
 
 # --- CONFIGURATION ENGINE (SECURE VAULT SHORTCUTS) ---
@@ -60,6 +61,7 @@ def check_dividend_changes():
                 if current_payout <= 0: continue
                 hist_url = f"https://financialmodelingprep.com/stable/dividends?symbol={ticker}&apikey={FMP_API_KEY}"
                 historical_list = requests.get(hist_url, timeout=15).json()
+                time.sleep(0.5)
                 if isinstance(historical_list, list) and len(historical_list) > 1:
                     prior_payout = historical_list[1].get("dividend", current_payout)
                     if current_payout > prior_payout:
@@ -104,8 +106,13 @@ def check_unusual_volume():
         try:
             url = f"https://financialmodelingprep.com/stable/quote?symbol={ticker}&apikey={FMP_API_KEY}"
             resp = requests.get(url, timeout=15)
+            time.sleep(0.5)
+            if resp.status_code == 429:
+                print(f"Volume error: rate limited on {ticker} (429) — slowing down")
+                time.sleep(3)
+                continue
             if not resp.text.strip():
-                print(f"Volume error: {ticker} returned an empty response (likely an invalid/unrecognized symbol)")
+                print(f"Volume error: {ticker} returned an empty response (status {resp.status_code})")
                 continue
             response = resp.json()
             if not isinstance(response, list) or len(response) == 0: continue
@@ -138,8 +145,13 @@ def check_heavy_price_swings():
         try:
             url = f"https://financialmodelingprep.com/stable/quote?symbol={ticker}&apikey={FMP_API_KEY}"
             resp = requests.get(url, timeout=15)
+            time.sleep(0.5)
+            if resp.status_code == 429:
+                print(f"Price swing error: rate limited on {ticker} (429) — slowing down")
+                time.sleep(3)
+                continue
             if not resp.text.strip():
-                print(f"Price swing error: {ticker} returned an empty response (likely an invalid/unrecognized symbol)")
+                print(f"Price swing error: {ticker} returned an empty response (status {resp.status_code})")
                 continue
             response = resp.json()
             if not isinstance(response, list) or len(response) == 0: continue
@@ -182,6 +194,7 @@ def check_short_interest():
         for ticker in MY_STOCKS:
             url = f"https://financialmodelingprep.com/stable/short-interest?symbol={ticker}&apikey={FMP_API_KEY}"
             response = requests.get(url, timeout=15).json()
+            time.sleep(0.5)
             if not isinstance(response, list) or len(response) == 0: continue
             latest = response[0]
             days_to_cover = latest.get("daysToCover") or latest.get("shortInterestRatio")
