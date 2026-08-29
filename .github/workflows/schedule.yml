@@ -2,19 +2,11 @@ name: Daily Dividend Check
 
 on:
   schedule:
-    - cron: '00 12 * * 1-5'  # 08:00 AM EDT
-    - cron: '15 13 * * 1-5'  # 09:15 AM EDT
-    - cron: '45 13 * * 1-5'  # 09:45 AM EDT
-    - cron: '30 14 * * 1-5'  # 10:30 AM EDT
-    - cron: '45 15 * * 1-5'  # 11:45 AM EDT
-    - cron: '00 17 * * 1-5'  # 01:00 PM EDT
-    - cron: '15 18 * * 1-5'  # 02:15 PM EDT
-    - cron: '30 19 * * 1-5'  # 03:30 PM EDT
-    - cron: '00 20 * * 1-5'  # 04:00 PM EDT
-    - cron: '30 20 * * 1-5'  # 04:30 PM EDT
-    - cron: '30 21 * * 1-5'  # 05:30 PM EDT
-    - cron: '00 23 * * 1-5'  # 07:00 PM EDT
-    - cron: '00 01 * * 2-6'  # 09:00 PM EDT
+    - cron: '30 12 * * 1-5'  # 8:30 AM Eastern Time (Pre-Market Catalysts & Upgrades) — light checks
+    - cron: '30 14 * * 1-5'  # 10:30 AM Eastern Time (Opening Bell Volatility) — light checks
+    - cron: '0 17 * * 1-5'   # 1:00 PM Eastern Time (Midday Whale Tracker) — light checks
+    - cron: '0 19 * * 1-5'   # 3:00 PM Eastern Time (Power Hour Check) — light checks
+    - cron: '30 20 * * 1-5'  # 4:30 PM Eastern Time (Closing Settlement & Surprises) — FULL checks (market is closed, numbers are final)
   workflow_dispatch:
 
 jobs:
@@ -22,10 +14,10 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout repository code
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
 
       - name: Set up Python environment
-        uses: actions/setup-python@v4
+        uses: actions/setup-python@v5
         with:
           python-version: '3.10'
 
@@ -33,9 +25,18 @@ jobs:
         run: |
           pip install requests python-dotenv
 
+      - name: Determine run mode
+        id: mode
+        run: |
+          if [ "${{ github.event.schedule }}" == "30 20 * * 1-5" ] || [ "${{ github.event_name }}" == "workflow_dispatch" ]; then
+            echo "mode=full" >> $GITHUB_OUTPUT
+          else
+            echo "mode=light" >> $GITHUB_OUTPUT
+          fi
+
       - name: Execute dividend script
         env:
           FMP_API_KEY: ${{ secrets.FMP_API_KEY }}
           TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
           TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
-        run: python main.py
+        run: python main.py ${{ steps.mode.outputs.mode }}
