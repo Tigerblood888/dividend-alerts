@@ -100,17 +100,22 @@ def check_insider_buying():
 def check_unusual_volume():
     # Your FMP plan doesn't allow multiple symbols in one request, so we check one at a time
     if not FMP_API_KEY: return
-    try:
-        for ticker in MY_STOCKS:
+    for ticker in MY_STOCKS:
+        try:
             url = f"https://financialmodelingprep.com/stable/quote?symbol={ticker}&apikey={FMP_API_KEY}"
-            response = requests.get(url, timeout=15).json()
+            resp = requests.get(url, timeout=15)
+            if not resp.text.strip():
+                print(f"Volume error: {ticker} returned an empty response (likely an invalid/unrecognized symbol)")
+                continue
+            response = resp.json()
             if not isinstance(response, list) or len(response) == 0: continue
             item = response[0]
             volume, avg_volume = item.get("volume", 0), item.get("avgVolume", 1) or 1
             ratio = round(volume / avg_volume, 1)
             if ratio >= 2.0:
                 send_telegram(f"📊 Unusual Volume Spike:\n• {ticker} is trading at {ratio}x its normal average daily volume right now!")
-    except Exception as e: print(f"Volume error: {e}")
+        except Exception as e:
+            print(f"Volume error for {ticker}: {e}")
 
 # NOTE: RSI check disabled — Technical Indicators require FMP's Premium plan ($59/mo billed annually).
 # Uncomment this function and its call at the bottom to re-enable if you upgrade.
@@ -129,10 +134,14 @@ def check_unusual_volume():
 def check_heavy_price_swings():
     # Your FMP plan doesn't allow multiple symbols in one request, so we check one at a time
     if not FMP_API_KEY: return
-    try:
-        for ticker in MY_STOCKS:
+    for ticker in MY_STOCKS:
+        try:
             url = f"https://financialmodelingprep.com/stable/quote?symbol={ticker}&apikey={FMP_API_KEY}"
-            response = requests.get(url, timeout=15).json()
+            resp = requests.get(url, timeout=15)
+            if not resp.text.strip():
+                print(f"Price swing error: {ticker} returned an empty response (likely an invalid/unrecognized symbol)")
+                continue
+            response = resp.json()
             if not isinstance(response, list) or len(response) == 0: continue
             stock = response[0]
             change_percent = stock.get("changePercentage", 0.0)
@@ -140,7 +149,8 @@ def check_heavy_price_swings():
             if abs(change_percent) >= 5.0:
                 direction = "📈 Massive Gain" if change_percent > 0 else "📉 Heavy Drop"
                 send_telegram(f"{direction} Alert:\n• {ticker} moved {round(change_percent, 2)}% today! Current Price: ${current_price}")
-    except Exception as e: print(f"Price swing error: {e}")
+        except Exception as e:
+            print(f"Price swing error for {ticker}: {e}")
 
 def check_earnings_surprises():
     if not FMP_API_KEY: return
