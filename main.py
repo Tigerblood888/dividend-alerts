@@ -84,7 +84,6 @@ def check_analyst_upgrades():
 
 def check_insider_buying():
     if not FMP_API_KEY: return
-    # NOTE: verify this endpoint in FMP's dashboard/playground for your plan tier
     url = f"https://financialmodelingprep.com/stable/insider-trading/latest?apikey={FMP_API_KEY}"
     try:
         response = requests.get(url, timeout=15).json()
@@ -99,43 +98,44 @@ def check_insider_buying():
     except Exception as e: print(f"Insider error: {e}")
 
 def check_unusual_volume():
-    if not FMP_API_KEY: return
-    tickers_string = ",".join(MY_STOCKS)
-    url = f"https://financialmodelingprep.com/stable/quote?symbol={tickers_string}&apikey={FMP_API_KEY}"
-    try:
-        response = requests.get(url, timeout=15).json()
-        if response is None or isinstance(response, dict): return
-        for item in response:
-            ticker = item.get("symbol")
-            if ticker in MY_STOCKS:
-                volume, avg_volume = item.get("volume", 0), item.get("avgVolume", 1) or 1
-                ratio = round(volume / avg_volume, 1)
-                if ratio >= 2.0:
-                    send_telegram(f"📊 Unusual Volume Spike:\n• {ticker} is trading at {ratio}x its normal average daily volume right now!")
-    except Exception as e: print(f"Volume error: {e}")
-
-def check_technical_rsi():
+    # Your FMP plan doesn't allow multiple symbols in one request, so we check one at a time
     if not FMP_API_KEY: return
     try:
         for ticker in MY_STOCKS:
-            url = f"https://financialmodelingprep.com/stable/technical-indicators/rsi?symbol={ticker}&periodLength=14&timeframe=1day&apikey={FMP_API_KEY}"
+            url = f"https://financialmodelingprep.com/stable/quote?symbol={ticker}&apikey={FMP_API_KEY}"
             response = requests.get(url, timeout=15).json()
-            if isinstance(response, list) and len(response) > 0:
-                current_rsi = response[0].get("rsi", 50)
-                if current_rsi <= 30:
-                    send_telegram(f"⚡ Technical Oversold Alert:\n• {ticker} RSI has dropped to {round(current_rsi, 1)} (Deep Value Buying Territory)!")
-    except Exception as e: print(f"RSI error: {e}")
+            if not isinstance(response, list) or len(response) == 0: continue
+            item = response[0]
+            volume, avg_volume = item.get("volume", 0), item.get("avgVolume", 1) or 1
+            ratio = round(volume / avg_volume, 1)
+            if ratio >= 2.0:
+                send_telegram(f"📊 Unusual Volume Spike:\n• {ticker} is trading at {ratio}x its normal average daily volume right now!")
+    except Exception as e: print(f"Volume error: {e}")
+
+# NOTE: RSI check disabled — Technical Indicators require FMP's Premium plan ($59/mo billed annually).
+# Uncomment this function and its call at the bottom to re-enable if you upgrade.
+# def check_technical_rsi():
+#     if not FMP_API_KEY: return
+#     try:
+#         for ticker in MY_STOCKS:
+#             url = f"https://financialmodelingprep.com/stable/technical-indicators/rsi?symbol={ticker}&periodLength=14&timeframe=1day&apikey={FMP_API_KEY}"
+#             response = requests.get(url, timeout=15).json()
+#             if isinstance(response, list) and len(response) > 0:
+#                 current_rsi = response[0].get("rsi", 50)
+#                 if current_rsi <= 30:
+#                     send_telegram(f"⚡ Technical Oversold Alert:\n• {ticker} RSI has dropped to {round(current_rsi, 1)} (Deep Value Buying Territory)!")
+#     except Exception as e: print(f"RSI error: {e}")
 
 def check_heavy_price_swings():
+    # Your FMP plan doesn't allow multiple symbols in one request, so we check one at a time
     if not FMP_API_KEY: return
-    tickers_string = ",".join(MY_STOCKS)
-    url = f"https://financialmodelingprep.com/stable/quote?symbol={tickers_string}&apikey={FMP_API_KEY}"
     try:
-        response = requests.get(url, timeout=15).json()
-        if response is None or isinstance(response, dict): return
-        for stock in response:
-            ticker = stock.get("symbol")
-            change_percent = stock.get("changesPercentage", 0.0)
+        for ticker in MY_STOCKS:
+            url = f"https://financialmodelingprep.com/stable/quote?symbol={ticker}&apikey={FMP_API_KEY}"
+            response = requests.get(url, timeout=15).json()
+            if not isinstance(response, list) or len(response) == 0: continue
+            stock = response[0]
+            change_percent = stock.get("changePercentage", 0.0)
             current_price = stock.get("price", 0.0)
             if abs(change_percent) >= 5.0:
                 direction = "📈 Massive Gain" if change_percent > 0 else "📉 Heavy Drop"
@@ -162,6 +162,41 @@ def check_earnings_surprises():
                     send_telegram(f"🎯 {status} Alert:\n• {ticker} just reported earnings!\n• Actual EPS: {actual_eps} vs Estimated: {estimated_eps} ({round(surprise_pct, 1)}% Surprise)")
     except Exception as e: print(f"Earnings surprise error: {e}")
 
+def check_short_interest():
+    # Confirmed available on your plan (returns [] when no fresh data — that's normal,
+    # since short interest is only reported a couple times per month).
+    # Field names below are our best read of the response shape; if this errors,
+    # the log will print the raw response so we can adjust field names precisely.
+    if not FMP_API_KEY: return
+    try:
+        for ticker in MY_STOCKS:
+            url = f"https://financialmodelingprep.com/stable/short-interest?symbol={ticker}&apikey={FMP_API_KEY}"
+            response = requests.get(url, timeout=15).json()
+            if not isinstance(response, list) or len(response) == 0: continue
+            latest = response[0]
+            days_to_cover = latest.get("daysToCover") or latest.get("shortInterestRatio")
+            short_pct = latest.get("shortPercentOfFloat") or latest.get("shortInterestPercent")
+            if days_to_cover is not None and days_to_cover >= 5:
+                send_telegram(f"🩳 High Short Interest:\n• {ticker} has {days_to_cover} days-to-cover — heavily shorted right now!")
+            elif short_pct is not None and short_pct >= 15:
+                send_telegram(f"🩳 High Short Interest:\n• {ticker} short interest is {short_pct}% of float!")
+    except Exception as e: print(f"Short interest error: {e}")
+
+# NOTE: Price target check disabled — this endpoint is Restricted on your current FMP plan.
+# Uncomment this function and its call at the bottom to re-enable if you upgrade.
+# def check_price_targets():
+#     if not FMP_API_KEY: return
+#     try:
+#         for ticker in MY_STOCKS:
+#             url = f"https://financialmodelingprep.com/stable/price-target-news?symbol={ticker}&apikey={FMP_API_KEY}"
+#             response = requests.get(url, timeout=15).json()
+#             if not isinstance(response, list) or len(response) == 0: continue
+#             latest = response[0]
+#             analyst_name = latest.get("analystName", "An analyst")
+#             new_target = latest.get("priceTarget")
+#             send_telegram(f"🎯 Price Target Update:\n• {analyst_name} set a new target of ${new_target} for {ticker}")
+#     except Exception as e: print(f"Price target error: {e}")
+
 if __name__ == "__main__":
     send_telegram("🔔 Terminal Operational Summary: Cloud scan initiated successfully.")
     check_dividends()
@@ -170,7 +205,9 @@ if __name__ == "__main__":
     check_analyst_upgrades()
     check_insider_buying()
     check_unusual_volume()
-    check_technical_rsi()
+    # check_technical_rsi()  # disabled — see note above
     check_heavy_price_swings()
     check_earnings_surprises()
+    check_short_interest()
+    # check_price_targets()  # disabled — see note above
     send_telegram("🚀 Victory Check: The script ran all functions completely!")
